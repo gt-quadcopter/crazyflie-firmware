@@ -11,7 +11,7 @@ before_install:
 	- export DEBUG=0
 	- export CLOAD=0
 
-script: make
+script: make build
 
 notifications:
 	email: false

@@ -5,6 +5,9 @@
 # uses a much older version of Ubuntu
 # NOTE: this must be executed from the root of the repo
 
+# Enable error reporting to the console
+set -e
+
 export $BUILD_ROOT_DIR=$(pwd)
 
 sudo apt-add-repository 'deb http://archive.ubuntu.com/ubuntu trusty main universe multiverse restricted'
@@ -13,3 +16,10 @@ sudo apt-get install -y gcc-arm-none-eabi mercurial python2.7 python-usb python-
 
 echo -e "\nPATH=\$PATH:$BUILD_ROOT_DIR/bin/gcc-arm-none-eabi/bin" >> ./.bashrc
 source ./bashrc
+
+echo "Branch: $TRAVIS_BRANCH"
+echo "======================"
+echo "Job Number: $TRAVIS_JOB_NUMBER"
+echo "Job ID: $TRAVIS_JOB_ID"
+echo "Build Number: $TRAVIS_BUILD_NUMBER"
+echo "Build ID: $TRAVIS_BUILD_ID"

@@ -5,12 +5,15 @@
 # uses a much older version of Ubuntu
 # NOTE: this must be executed from the root of the repo
 
+export $BUILD_ROOT_DIR=$(pwd)
+
+sudo apt-get update
 sudo apt-get -y install mercurial python2.7 python-usb python-pygame python-qt4 qt4-designer openocd build-essential
 
 wget https://launchpad.net/gcc-arm-embedded/4.7/4.7-2013-q1-update/+download/gcc-arm-none-eabi-4_7-2013q1-20130313-linux.tar.bz2
 tar xjf gcc-arm-none-eabi-4_7-2013q1-20130313-linux.tar.bz2
-mkdir ~/bin
-mv gcc-arm-none-eabi-4_7-2013q1 ~/bin/gcc-arm-none-eabi
+mkdir ./bin
+mv ./gcc-arm-none-eabi-4_7-2013q1 ./bin/gcc-arm-none-eabi
 
-echo -e "\nPATH=\$PATH:$HOME/bin/gcc-arm-none-eabi/bin" >> ~/.bashrc
-source ~/.bashrc
+echo -e "\nPATH=\$PATH:$BUILD_ROOT_DIR/bin/gcc-arm-none-eabi/bin" >> ./.bashrc
+source ./bashrc

@@ -9,7 +9,7 @@ before_install:
 	- export PYTHON2=python
 	- export USE_ESKYLINK=0
 	- export DEBUG=0
-	- export CLOAD=1
+	- export CLOAD=0
 
 script: make
 

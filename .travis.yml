@@ -1,6 +1,17 @@
 language: c
-compiler:
-  - gcc
-  - clang
-# Change this to your needs
+compiler: gcc
+
+before_install:
+	- './util/travis-setup'
+	- export CROSS_COMPILE=arm-none-eabi-
+	- export OPENOCD_INTERFACE=interface/jtagkey.cfg
+	- export V=1
+	- export PYTHON2=python
+	- export USE_ESKYLINK=0
+	- export DEBUG=0
+	- export CLOAD=1
+
 script: make
+
+notifications:
+	email: false

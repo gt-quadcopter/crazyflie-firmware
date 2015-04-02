@@ -1,17 +1,20 @@
 language: c
+
 compiler: gcc
 
 before_install:
-	- './travis-setup'
-	- export CROSS_COMPILE=arm-none-eabi-
-	- export OPENOCD_INTERFACE=interface/jtagkey.cfg
-	- export V=1
-	- export PYTHON2=python
-	- export USE_ESKYLINK=0
-	- export DEBUG=0
-	- export CLOAD=0
+  - export CROSS_COMPILE=arm-none-eabi-
+  - export OPENOCD_INTERFACE=interface/jtagkey.cfg
+  - export V=1
+  - export PYTHON2=python
+  - export USE_ESKYLINK=0
+  - export DEBUG=0
+  - export CLOAD=0
 
-script: make build
+install:
+  - ./travis-setup
+
+script: make
 
 notifications:
-	email: false
+  email: false

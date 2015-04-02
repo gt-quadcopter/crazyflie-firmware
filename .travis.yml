@@ -12,7 +12,7 @@ before_install:
   - export CLOAD=0
 
 install:
-  - ./travis-setup
+  - `./travis-setup`
 
 script: make
 

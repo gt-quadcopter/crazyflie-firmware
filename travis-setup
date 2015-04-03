@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env sh
 
 # This script sets up a travis-ci VM for compiling our project
 # Unfortunately we can't use our regular ubuntu setup script because travis

@@ -2,6 +2,9 @@ language: c
 
 compiler: gcc
 
+before_script:
+  - chmod +x ./travis-setup
+
 before_install:
   - export CROSS_COMPILE=arm-none-eabi-
   - export OPENOCD_INTERFACE=interface/jtagkey.cfg

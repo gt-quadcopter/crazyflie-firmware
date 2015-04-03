@@ -1,7 +1,7 @@
 language: c
 
 install:
-  - export CC=arm-none-eabi-gcc
+  - export CC=arm-none-eabi-as
   - arm-none-eabi-as --version
   - sudo add-apt-repository -y ppa:terry.guo/gcc-arm-embedded && sudo apt-get update
   - sudo apt-get install build-essential gcc-arm-none-eabi git

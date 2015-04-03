@@ -1,13 +1,12 @@
 language: c
-
 compiler: gcc
-
-before_script:
-  - chmod +x ./travis-setup
 
 sudo: required
 
 before_install:
+  - wget https://launchpad.net/gcc-arm-embedded/4.9/4.9-2014-q4-major/+download/gcc-arm-none-eabi-4_9-2014q4-20141203-linux.tar.bz2
+  - tar -xf gcc-arm-none-eabi-4_9-2014q4-20141203-linux.tar.bz2
+  - chmod +x ./travis-setup
   - export CROSS_COMPILE=arm-none-eabi-
   - export OPENOCD_INTERFACE=interface/jtagkey.cfg
   - export V=1
@@ -16,8 +15,11 @@ before_install:
   - export DEBUG=0
   - export CLOAD=0
 
-install:
-  - './travis-setup'
+addons:
+  apt_packages:
+    - lib32bz2-1.0
+    - lib32ncurses5
+    - lib32z1
 
 script: make
 

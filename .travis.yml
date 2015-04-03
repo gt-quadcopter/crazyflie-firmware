@@ -18,7 +18,6 @@ install:
   - export USE_ESKYLINK=0
   - export DEBUG=0
   - export CLOAD=0
-  - echo "Branch: $TRAVIS_BRANCH"
 
 script: make all
 

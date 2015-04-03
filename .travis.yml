@@ -6,7 +6,7 @@ sudo: required
 install:
   - wget https://launchpad.net/gcc-arm-embedded/4.9/4.9-2014-q4-major/+download/gcc-arm-none-eabi-4_9-2014q4-20141203-linux.tar.bz2
   - tar -xf gcc-arm-none-eabi-4_9-2014q4-20141203-linux.tar.bz2
-  - export PATH=$PATH:$PWD/gcc-arm-none-eabi-4_9-2014q4/bin/
+  - export PATH=$PATH:$(pwd)/gcc-arm-none-eabi-4_9-2014q4/bin/
   - export CROSS_COMPILE=arm-none-eabi-
   - export OPENOCD_INTERFACE=interface/jtagkey.cfg
   - export V=1

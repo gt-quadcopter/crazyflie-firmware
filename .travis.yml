@@ -1,11 +1,11 @@
 language: c
 
-before_script:
-  - wget https://launchpad.net/gcc-arm-embedded/4.9/4.9-2014-q4-major/+download/gcc-arm-none-eabi-4_9-2014q4-20141203-linux.tar.bz2
-  - tar -xf gcc-arm-none-eabi-4_9-2014q4-20141203-linux.tar.bz2
-  - export PATH=$PATH:$PWD/gcc-arm-none-eabi-4_9-2014q4/bin
-
 install:
+  - export CC=arm-none-eabi-gcc
+  - arm-none-eabi-as --version
+  - sudo add-apt-repository -y ppa:terry.guo/gcc-arm-embedded && sudo apt-get update
+  - sudo apt-get install build-essential gcc-arm-none-eabi git
+  - $CC --version
   - echo $PATH
   - export V=1
   - export PYTHON2=python

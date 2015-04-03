@@ -6,8 +6,6 @@
 # NOTE: this must be executed from the root of the repo
 
 # Enable error reporting to the console
-set -e
-
 export $BUILD_ROOT_DIR=$(pwd)
 
 sudo apt-add-repository 'deb http://archive.ubuntu.com/ubuntu trusty main universe multiverse restricted'

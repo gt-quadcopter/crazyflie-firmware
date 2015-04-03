@@ -10,7 +10,7 @@ install:
   - export PATH=$PATH:$PWD/gcc-arm-none-eabi-4_9-2014q4/bin
   - echo $PATH
   - ls
-  - ls ./gcc-arm-none-eabi-4_9-2014q4/bin
+  - ls -lat ./gcc-arm-none-eabi-4_9-2014q4/bin
   - export CROSS_COMPILE=arm-none-eabi-
   - export OPENOCD_INTERFACE=interface/jtagkey.cfg
   - export V=1

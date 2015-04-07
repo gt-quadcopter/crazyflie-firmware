@@ -301,6 +301,7 @@ void adcTask(void *param)
 
 void proxSensorUpdate(AdcGroup *adcValues)
 {
+	// Add sensor scaling if needed
 	prox1_value = (uint32_t)(adcConvertToVoltageFloat(adcValues->vprox1.val,
-				adcValues->vprox1.vref)PROX_CON);
+				adcValues->vprox1.vref));
 }

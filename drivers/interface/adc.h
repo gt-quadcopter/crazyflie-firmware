@@ -69,6 +69,7 @@ typedef struct __attribute__((packed))
 typedef struct __attribute__((packed))
 {
   AdcPair vbat;
+  AdcPair vprox1;
 } AdcGroup;
 
 typedef struct
@@ -116,5 +117,10 @@ void adcInterruptHandler(void);
  * ADC task
  */
 void adcTask(void *param);
+
+/**
+ * Update Proximity Sensor
+ */
+void proxSensorUpdate(AdcGroup* adcValues);
 
 #endif /* ADC_H_ */

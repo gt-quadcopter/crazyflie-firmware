@@ -38,6 +38,7 @@
 #include "pm.h"
 #include "nvicconf.h"
 #include "imu.h"
+#include "log.h"
 
 #ifdef ADC_OUTPUT_RAW_DATA
 #include "uart.h"
@@ -46,10 +47,12 @@
 
 // PORT A
 #define GPIO_VBAT        GPIO_Pin_3
+#define GPIO_PROX		 GPIO_Pin_6
 
 // CHANNELS
-#define NBR_OF_ADC_CHANNELS   1
+#define NBR_OF_ADC_CHANNELS   2
 #define CH_VBAT               ADC_Channel_3
+#define CH_PROX				  ADC_Channel_6
 
 #define CH_VREF               ADC_Channel_17
 #define CH_TEMP               ADC_Channel_16
@@ -58,6 +61,13 @@ static bool isInit;
 volatile AdcGroup adcValues[ADC_MEAN_SIZE * 2];
 
 xQueueHandle      adcQueue;
+
+// logging info for prox sensor
+static uint32_t prox1_value;
+
+LOG_GROUP_START(adc)
+LOG_ADD(LOG_INT32, vProx, &prox1_value)
+LOG_GROUP_STOP(adc)
 
 static void adcDmaInit(void)
 {
@@ -132,6 +142,12 @@ void adcInit(void)
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1 | RCC_APB2Periph_ADC2 |
                          RCC_APB2Periph_GPIOA | RCC_APB2Periph_AFIO, ENABLE);
 
+  //GPIO Init Strcuture for proximity sensor
+  GPIO_InitStructure.GPIO_Pin = GPIO_PROX; 
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+  GPIO_Init(GPIOA, &GPIO_InitStructure);
+
   //Timer configuration
   TIM_TimeBaseStructure.TIM_Period = ADC_TRIG_PERIOD;
   TIM_TimeBaseStructure.TIM_Prescaler = ADC_TRIG_PRESCALE;
@@ -176,6 +192,7 @@ void adcInit(void)
 
   // ADC2 channel sequence
   ADC_RegularChannelConfig(ADC2, CH_VBAT, 1, ADC_SampleTime_28Cycles5);
+  ADC_RegularChannelConfig(ADC2, CH_PROX, 2, ADC_SampleTime_28Cycles5);
 
   // Enable ADC1
   ADC_Cmd(ADC1, ENABLE);
@@ -274,9 +291,16 @@ void adcTask(void *param)
     xQueueReceive(adcQueue, &adcRawValues, portMAX_DELAY);
     adcDecimate(adcRawValues, &adcValues);  // 10% CPU
     pmBatteryUpdate(&adcValues);
+	proxSensorUpdate(&adcValues);
 
 #ifdef ADC_OUTPUT_RAW_DATA
     uartSendDataDma(sizeof(AdcGroup)*ADC_MEAN_SIZE, (uint8_t*)adcRawValues);
 #endif
   }
+}
+
+void proxSensorUpdate(AdcGroup *adcValues)
+{
+	prox1_value = (uint32_t)(adcConvertToVoltageFloat(adcValues->vprox1.val,
+				adcValues->vprox1.vref)PROX_CON);
 }

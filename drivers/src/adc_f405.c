@@ -29,7 +29,7 @@
  *							page 69, with a Ts of 28.5 samples, 12-bit, and ADC@12
  *							the highest impedance to use is 25.2kOhm.
  *
- *	This file includes the code to read the proximity sensors int he ADC and log their data
+ *	This file includes the code to read the proximity sensors in the ADC and log their data
  */
 #include "stm32fxxx.h"
 
@@ -67,11 +67,11 @@ volatile AdcGroup adcValues[ADC_MEAN_SIZE * 2];
 xQueueHandle adcQueue;
 
 // logging info for prox sensor
-static uint32_t prox1_value;
+static volatile uint16_t prox1_value;
 
 LOG_GROUP_START(adc)
 //LOG_ADD(LOG_INT32, vProx, &prox1_value)
-LOG_ADD(LOG_UINT16, prox1, &adcValues[0].vprox1.val)
+LOG_ADD(LOG_UINT16, prox1, &prox1_value)
 LOG_GROUP_STOP(adc)
 
 
@@ -85,13 +85,14 @@ static void adcDmaInit(void)
 	// DMA channel1 configuration
 	DMA_DeInit(DMA1_Stream1);
 	DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&ADC1->DR;
-	DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)&adcValues;
+//	DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)&adcValues;
+	DMA_InitStructure.DMA_Memory0BaseAddr = (uint16_t)&prox1_value;
 	DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
 	DMA_InitStructure.DMA_BufferSize = NBR_OF_ADC_CHANNELS * (ADC_MEAN_SIZE * 2);
 	DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
 	DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
-	DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Word;
-	DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Word;
+	DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
+	DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord;
 	DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
 	DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;
 //	DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
@@ -179,8 +180,9 @@ void adcInit(void)
 
 	// ADC Common Init
 	ADC_DeInit();
-	ADC_CommonInitStructure.ADC_Mode = ADC_DualMode_RegSimult;
-	ADC_CommonInitStructure.ADC_DMAAccessMode = ADC_DMAAccessMode_2;
+//	ADC_CommonInitStructure.ADC_Mode = ADC_DualMode_RegSimult;
+	ADC_CommonInitStructure.ADC_Mode = ADC_Mode_Independent;
+//	ADC_CommonInitStructure.ADC_DMAAccessMode = ADC_DMAAccessMode_2;
 	ADC_CommonInit(&ADC_CommonInitStructure);
 
 	// ADC1 configuration
@@ -192,21 +194,22 @@ void adcInit(void)
 	ADC_Init(ADC1, &ADC_InitStructure);
 
 	// ADC1 channel sequence
-	ADC_RegularChannelConfig(ADC1, CH_VREF, 1, ADC_SampleTime_28Cycles);
+	ADC_RegularChannelConfig(ADC1, CH_PROX, 1, ADC_SampleTime_28Cycles);
 
 	// ADC2 configuration
-	ADC_InitStructure.ADC_ScanConvMode = ENABLE;
-	ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;
-	ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
-	ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
-	ADC_InitStructure.ADC_NbrOfConversion = NBR_OF_ADC_CHANNELS;
-	ADC_Init(ADC2, &ADC_InitStructure);
-
-	// ADC2 channel sequence
-	ADC_RegularChannelConfig(ADC2, CH_PROX, 1, ADC_SampleTime_28Cycles);
+//	ADC_InitStructure.ADC_ScanConvMode = ENABLE;
+//	ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;
+//	ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
+//	ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
+//	ADC_InitStructure.ADC_NbrOfConversion = NBR_OF_ADC_CHANNELS;
+//	ADC_Init(ADC2, &ADC_InitStructure);
+//
+//	// ADC2 channel sequence
+//	ADC_RegularChannelConfig(ADC2, CH_PROX, 1, ADC_SampleTime_28Cycles);
 
 	// Enable ADC1
 	ADC_Cmd(ADC1, ENABLE);
+
 	// Calibrate ADC1
 //	ADC_ResetCalibration(ADC1);
 //	while(ADC_GetResetCalibrationStatus(ADC1));
@@ -215,10 +218,10 @@ void adcInit(void)
 
 	// Enable ADC1 external trigger
 //	ADC_ExternalTrigConvCmd(ADC1, ENABLE);
-	ADC_TempSensorVrefintCmd(ENABLE);
+//	ADC_TempSensorVrefintCmd(ENABLE);
 
 	// Enable ADC2
-	ADC_Cmd(ADC2, ENABLE);
+//	ADC_Cmd(ADC2, ENABLE);
 	// Calibrate ADC2
 //	ADC_ResetCalibration(ADC2);
 //	while(ADC_GetResetCalibrationStatus(ADC2));

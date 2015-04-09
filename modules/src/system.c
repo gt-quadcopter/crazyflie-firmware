@@ -86,7 +86,7 @@ void systemInit(void)
 
   configblockInit();
   workerInit();
-  //adcInit();
+  adcInit();
   ledseqInit();
   pmInit();
     

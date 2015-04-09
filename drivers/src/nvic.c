@@ -30,6 +30,7 @@
 #include "i2cdev.h"
 #include "ws2812.h"
 #include "usb_core.h"
+#include "adc.h"
 
 #define DONT_DISCARD __attribute__((used))
 
@@ -174,7 +175,7 @@ void DONT_DISCARD DebugMon_Handler(void)
 
 void DONT_DISCARD DMA1_Channel1_IRQHandler(void)
 {
-//  adcInterruptHandler();
+  adcInterruptHandler();
 }
 
 void DONT_DISCARD TIM2_IRQHandler(void)

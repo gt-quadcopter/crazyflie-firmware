@@ -68,7 +68,6 @@ typedef struct __attribute__((packed))
 
 typedef struct __attribute__((packed))
 {
-  AdcPair vbat;
   AdcPair vprox1;
 } AdcGroup;
 

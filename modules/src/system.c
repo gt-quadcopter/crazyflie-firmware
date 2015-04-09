@@ -54,6 +54,7 @@
 #include "usb.h"
 #include "expbrd.h"
 #include "mem.h"
+#include "adc.h"
 
 /* Private variable */
 static bool selftestPassed;

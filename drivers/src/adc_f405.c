@@ -214,7 +214,7 @@ void adcInit(void)
 //	while(ADC_GetCalibrationStatus(ADC1));
 
 	// Enable ADC1 external trigger
-	ADC_ExternalTrigConvCmd(ADC1, ENABLE);
+//	ADC_ExternalTrigConvCmd(ADC1, ENABLE);
 	ADC_TempSensorVrefintCmd(ENABLE);
 
 	// Enable ADC2
@@ -226,7 +226,7 @@ void adcInit(void)
 //	while(ADC_GetCalibrationStatus(ADC2));
 
 	// Enable ADC2 external trigger
-	ADC_ExternalTrigConvCmd(ADC2, ENABLE);
+//	ADC_ExternalTrigConvCmd(ADC2, ENABLE);
 
 	// Enable the DMA1 channel1 Interrupt
 	NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream1_IRQn;
@@ -304,7 +304,6 @@ void adcTask(void *param)
 	{
 		xQueueReceive(adcQueue, &adcRawValues, portMAX_DELAY);
 		adcDecimate(adcRawValues, &adcValues);	// 10% CPU
-		pmBatteryUpdate(&adcValues);
 		proxSensorUpdate(&adcValues);
 
 #ifdef ADC_OUTPUT_RAW_DATA

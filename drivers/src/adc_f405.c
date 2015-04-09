@@ -144,8 +144,8 @@ void adcInit(void)
 
 	ADC_InitTypeDef ADC_InitStructure;
 	ADC_CommonInitTypeDef ADC_CommonInitStructure;
-	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-	TIM_OCInitTypeDef TIM_OCInitStructure;
+//	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+//	TIM_OCInitTypeDef TIM_OCInitStructure;
 	NVIC_InitTypeDef NVIC_InitStructure;
 	GPIO_InitTypeDef GPIO_InitStructure;
 
@@ -160,22 +160,22 @@ void adcInit(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_25MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	//Timer configuration
-	TIM_TimeBaseStructure.TIM_Period = ADC_TRIG_PERIOD;
-	TIM_TimeBaseStructure.TIM_Prescaler = ADC_TRIG_PRESCALE;
-	TIM_TimeBaseStructure.TIM_ClockDivision = 0;
-	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
-
-	// TIM2 channel2 configuration in PWM mode
-	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
-	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-	TIM_OCInitStructure.TIM_Pulse = 1;
-	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
-	TIM_OC2Init(TIM2, &TIM_OCInitStructure);
-	TIM_OC2PreloadConfig(TIM2, TIM_OCPreload_Enable);
-	// Halt timer 2 during debug halt.
-	DBGMCU_Config(DBGMCU_TIM2_STOP, ENABLE);
+//	//Timer configuration
+//	TIM_TimeBaseStructure.TIM_Period = ADC_TRIG_PERIOD;
+//	TIM_TimeBaseStructure.TIM_Prescaler = ADC_TRIG_PRESCALE;
+//	TIM_TimeBaseStructure.TIM_ClockDivision = 0;
+//	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+//	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
+//
+//	// TIM2 channel2 configuration in PWM mode
+//	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+//	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+//	TIM_OCInitStructure.TIM_Pulse = 1;
+//	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
+//	TIM_OC2Init(TIM2, &TIM_OCInitStructure);
+//	TIM_OC2PreloadConfig(TIM2, TIM_OCPreload_Enable);
+//	// Halt timer 2 during debug halt.
+//	DBGMCU_Config(DBGMCU_TIM2_STOP, ENABLE);
 
 	adcDmaInit();
 
@@ -188,8 +188,8 @@ void adcInit(void)
 
 	// ADC1 configuration
 	ADC_InitStructure.ADC_ScanConvMode = ENABLE;
-	ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;
-	ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T2_CC2;
+	ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
+//	ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T2_CC2;
 	ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
 	ADC_InitStructure.ADC_NbrOfConversion = NBR_OF_ADC_CHANNELS;
 	ADC_Init(ADC1, &ADC_InitStructure);
@@ -265,7 +265,7 @@ void adcDmaStart(void)
 	// Enable ADC1 DMA
 	ADC_DMACmd(ADC1, ENABLE);
 	// TIM2 counter enable
-	TIM_Cmd(TIM2, ENABLE);
+//	TIM_Cmd(TIM2, ENABLE);
 }
 
 void adcDmaStop(void)

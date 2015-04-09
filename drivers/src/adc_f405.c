@@ -135,6 +135,7 @@ static void adcDecimate(AdcGroup* oversampled, AdcGroup* decimated)
 
 void adcInit(void)
 {
+	DEBUG_PRINT("adcInit() start\n");
 
 	if(isInit)
 		return;
@@ -240,7 +241,7 @@ void adcInit(void)
 							configMINIMAL_STACK_SIZE, NULL, /*priority*/3, NULL);
 
 	isInit = true;
-	DEBUG_PRINT("adcInit() complete");
+	DEBUG_PRINT("adcInit() complete\n");
 }
 
 bool adcTest(void)
@@ -286,7 +287,7 @@ void adcInterruptHandler(void)
 		adcBuffer = (AdcGroup*)&adcValues[ADC_MEAN_SIZE];
 		xQueueSendFromISR(adcQueue, &adcBuffer, &xHigherPriorityTaskWoken);
 	}
-	DEBUG_PRINT("adcInterruptHandler Finished");
+	DEBUG_PRINT("adcInterruptHandler Finished\n");
 }
 
 void adcTask(void *param)
@@ -317,5 +318,5 @@ void proxSensorUpdate(AdcGroup *adcValues)
 	// Add sensor scaling if needed
 	prox1_value = (uint32_t)(adcConvertToVoltageFloat(adcValues->vprox1.val,
 				adcValues->vprox1.vref));
-	DEBUG_PRINT("proxSensorUpdate()");
+	DEBUG_PRINT("proxSensorUpdate()\n");
 }

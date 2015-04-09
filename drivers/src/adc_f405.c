@@ -68,7 +68,8 @@ xQueueHandle adcQueue;
 static uint32_t prox1_value;
 
 LOG_GROUP_START(adc)
-LOG_ADD(LOG_INT32, vProx, &prox1_value)
+//LOG_ADD(LOG_INT32, vProx, &prox1_value)
+LOG_ADD(LOG_UINT16, prox1, &adcValues[0].vprox1.val)
 LOG_GROUP_STOP(adc)
 
 
@@ -204,10 +205,10 @@ void adcInit(void)
 	// Enable ADC1
 	ADC_Cmd(ADC1, ENABLE);
 	// Calibrate ADC1
-	ADC_ResetCalibration(ADC1);
-	while(ADC_GetResetCalibrationStatus(ADC1));
-	ADC_StartCalibration(ADC1);
-	while(ADC_GetCalibrationStatus(ADC1));
+//	ADC_ResetCalibration(ADC1);
+//	while(ADC_GetResetCalibrationStatus(ADC1));
+//	ADC_StartCalibration(ADC1);
+//	while(ADC_GetCalibrationStatus(ADC1));
 
 	// Enable ADC1 external trigger
 	ADC_ExternalTrigConvCmd(ADC1, ENABLE);
@@ -216,10 +217,10 @@ void adcInit(void)
 	// Enable ADC2
 	ADC_Cmd(ADC2, ENABLE);
 	// Calibrate ADC2
-	ADC_ResetCalibration(ADC2);
-	while(ADC_GetResetCalibrationStatus(ADC2));
-	ADC_StartCalibration(ADC2);
-	while(ADC_GetCalibrationStatus(ADC2));
+//	ADC_ResetCalibration(ADC2);
+//	while(ADC_GetResetCalibrationStatus(ADC2));
+//	ADC_StartCalibration(ADC2);
+//	while(ADC_GetCalibrationStatus(ADC2));
 
 	// Enable ADC2 external trigger
 	ADC_ExternalTrigConvCmd(ADC2, ENABLE);

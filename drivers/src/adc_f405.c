@@ -42,6 +42,8 @@
 #include "imu.h"
 #include "log.h"
 
+#include "debug.h"
+
 #ifdef ADC_OUTPUT_RAW_DATA
 #include "uart.h"
 #include "acc.h"
@@ -59,7 +61,7 @@
 #define CH_VREF					ADC_Channel_17
 #define CH_TEMP					ADC_Channel_16
 
-static bool isInit;
+static bool isInit = false;
 volatile AdcGroup adcValues[ADC_MEAN_SIZE * 2];
 
 xQueueHandle adcQueue;
@@ -238,6 +240,7 @@ void adcInit(void)
 							configMINIMAL_STACK_SIZE, NULL, /*priority*/3, NULL);
 
 	isInit = true;
+	DEBUG_PRINT("adcInit() complete");
 }
 
 bool adcTest(void)
@@ -283,6 +286,7 @@ void adcInterruptHandler(void)
 		adcBuffer = (AdcGroup*)&adcValues[ADC_MEAN_SIZE];
 		xQueueSendFromISR(adcQueue, &adcBuffer, &xHigherPriorityTaskWoken);
 	}
+	DEBUG_PRINT("adcInterruptHandler Finished");
 }
 
 void adcTask(void *param)
@@ -313,4 +317,5 @@ void proxSensorUpdate(AdcGroup *adcValues)
 	// Add sensor scaling if needed
 	prox1_value = (uint32_t)(adcConvertToVoltageFloat(adcValues->vprox1.val,
 				adcValues->vprox1.vref));
+	DEBUG_PRINT("proxSensorUpdate()");
 }

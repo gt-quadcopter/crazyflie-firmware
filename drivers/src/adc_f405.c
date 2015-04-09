@@ -28,6 +28,8 @@
  * Sample time: According to the formula in the stm32 product manual
  *							page 69, with a Ts of 28.5 samples, 12-bit, and ADC@12
  *							the highest impedance to use is 25.2kOhm.
+ *
+ *	This file includes the code to read the proximity sensors int he ADC and log their data
  */
 #include "stm32fxxx.h"
 

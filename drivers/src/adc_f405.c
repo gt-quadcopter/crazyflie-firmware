@@ -86,9 +86,10 @@ static void adcDmaInit(void)
 	DMA_DeInit(DMA1_Stream1);
 	DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&ADC1->DR;
 //	DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)&adcValues;
-	DMA_InitStructure.DMA_Memory0BaseAddr = (uint16_t)&prox1_value;
+	DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)&prox1_value;
 	DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
-	DMA_InitStructure.DMA_BufferSize = NBR_OF_ADC_CHANNELS * (ADC_MEAN_SIZE * 2);
+//	DMA_InitStructure.DMA_BufferSize = NBR_OF_ADC_CHANNELS * (ADC_MEAN_SIZE * 2);
+	DMA_InitStructure.DMA_BufferSize = 1;
 	DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
 	DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
 	DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
@@ -238,10 +239,10 @@ void adcInit(void)
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 
-	adcQueue = xQueueCreate(1, sizeof(AdcGroup*));
-
-	xTaskCreate(adcTask, (const signed char * const)"ADC",
-							configMINIMAL_STACK_SIZE, NULL, /*priority*/3, NULL);
+//	adcQueue = xQueueCreate(1, sizeof(AdcGroup*));
+//
+//	xTaskCreate(adcTask, (const signed char * const)"ADC",
+//							configMINIMAL_STACK_SIZE, NULL, /*priority*/3, NULL);
 
 	isInit = true;
 	DEBUG_PRINT("adcInit() complete\n");
@@ -282,13 +283,13 @@ void adcInterruptHandler(void)
 	{
 		DMA_ClearITPendingBit(DMA1_Stream1, DMA_IT_HTIF1);
 		adcBuffer = (AdcGroup*)&adcValues[0];
-		xQueueSendFromISR(adcQueue, &adcBuffer, &xHigherPriorityTaskWoken);
+//		xQueueSendFromISR(adcQueue, &adcBuffer, &xHigherPriorityTaskWoken);
 	}
 	if(DMA_GetITStatus(DMA1_Stream1, DMA_IT_TCIF1))
 	{
 		DMA_ClearITPendingBit(DMA1_Stream1, DMA_IT_TCIF1);
 		adcBuffer = (AdcGroup*)&adcValues[ADC_MEAN_SIZE];
-		xQueueSendFromISR(adcQueue, &adcBuffer, &xHigherPriorityTaskWoken);
+//		xQueueSendFromISR(adcQueue, &adcBuffer, &xHigherPriorityTaskWoken);
 	}
 	DEBUG_PRINT("adcInterruptHandler Finished\n");
 }

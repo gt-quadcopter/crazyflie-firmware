@@ -71,7 +71,8 @@ static volatile uint16_t prox1_value;
 
 LOG_GROUP_START(adc)
 //LOG_ADD(LOG_INT32, vProx, &prox1_value)
-LOG_ADD(LOG_UINT16, prox1, &prox1_value)
+//LOG_ADD(LOG_UINT16, prox1, &prox1_value)
+LOG_ADD(LOG_UINT16, prox1, &ADC1->DR)
 LOG_GROUP_STOP(adc)
 
 
@@ -177,7 +178,7 @@ void adcInit(void)
 //	// Halt timer 2 during debug halt.
 //	DBGMCU_Config(DBGMCU_TIM2_STOP, ENABLE);
 
-	adcDmaInit();
+//	adcDmaInit();
 
 	// ADC Common Init
 	ADC_DeInit();
@@ -233,11 +234,11 @@ void adcInit(void)
 //	ADC_ExternalTrigConvCmd(ADC2, ENABLE);
 
 	// Enable the DMA1 channel1 Interrupt
-	NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream1_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_ADC_PRI;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
+//	NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream1_IRQn;
+//	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_ADC_PRI;
+//	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+//	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+//	NVIC_Init(&NVIC_InitStructure);
 
 //	adcQueue = xQueueCreate(1, sizeof(AdcGroup*));
 //

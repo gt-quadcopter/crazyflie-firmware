@@ -189,11 +189,11 @@ void adcInit(void)
 	ADC_CommonInit(&ADC_CommonInitStructure);
 
 	// ADC1 configuration
-	ADC_InitStructure.ADC_ScanConvMode = DISABLE;
+	ADC_InitStructure.ADC_ScanConvMode = ENABLE;
 	ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
 //	ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T2_CC2;
 	ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
-//	ADC_InitStructure.ADC_NbrOfConversion = NBR_OF_ADC_CHANNELS;
+	ADC_InitStructure.ADC_NbrOfConversion = NBR_OF_ADC_CHANNELS;
 	ADC_Init(ADC1, &ADC_InitStructure);
 
 	// ADC1 channel sequence

@@ -87,7 +87,6 @@ void systemInit(void)
 
   configblockInit();
   workerInit();
-  adcInit();
   ledseqInit();
   pmInit();
     
@@ -138,6 +137,7 @@ void systemTask(void *arg)
               *((int*)(MCU_ID_ADDRESS+8)), *((int*)(MCU_ID_ADDRESS+4)),
               *((int*)(MCU_ID_ADDRESS+0)), *((short*)(MCU_FLASH_SIZE_ADDRESS)));
 
+  adcInit();
   commanderInit();
   stabilizerInit();
   expbrdInit();

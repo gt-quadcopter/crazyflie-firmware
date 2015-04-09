@@ -151,8 +151,9 @@ void adcInit(void)
 	GPIO_InitTypeDef GPIO_InitStructure;
 
 	// Enable TIM2, GPIOA and ADC1 clock
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1 | RCC_APB2Periph_ADC2, ENABLE);
+//	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+//	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1 | RCC_APB2Periph_ADC2, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
 
 	//GPIO Init Strcuture for proximity sensor
@@ -188,15 +189,17 @@ void adcInit(void)
 	ADC_CommonInit(&ADC_CommonInitStructure);
 
 	// ADC1 configuration
-	ADC_InitStructure.ADC_ScanConvMode = ENABLE;
+	ADC_InitStructure.ADC_ScanConvMode = DISABLE;
 	ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
 //	ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T2_CC2;
 	ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
-	ADC_InitStructure.ADC_NbrOfConversion = NBR_OF_ADC_CHANNELS;
+//	ADC_InitStructure.ADC_NbrOfConversion = NBR_OF_ADC_CHANNELS;
 	ADC_Init(ADC1, &ADC_InitStructure);
 
 	// ADC1 channel sequence
 	ADC_RegularChannelConfig(ADC1, CH_PROX, 1, ADC_SampleTime_28Cycles);
+
+	ADC_ContinuousModeCmd(ADC1, ENABLE);
 
 	// ADC2 configuration
 //	ADC_InitStructure.ADC_ScanConvMode = ENABLE;

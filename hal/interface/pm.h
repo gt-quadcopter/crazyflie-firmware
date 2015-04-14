@@ -162,11 +162,14 @@ float pmGetBatteryVoltageMin(void);
  */
 float pmGetBatteryVoltageMax(void);
 
+#ifdef STM32F10X
 /**
+ * Crazyflie1 only
  * Updates and calculates battery values.
  * Should be called for every new adcValues sample.
  */
 void pmBatteryUpdate(AdcGroup* adcValues);
+#endif
 
 /**
  * Returns true if the battery is currently in use

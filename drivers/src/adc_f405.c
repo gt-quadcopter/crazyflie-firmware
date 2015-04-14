@@ -57,7 +57,7 @@
 
 
 // CHANNELS
-#define NBR_OF_ADC_CHANNELS		1
+#define NBR_OF_ADC_CHANNELS		5
 #define CH_A0	ADC_Channel_2
 #define CH_A1	ADC_Channel_3
 #define CH_A2	ADC_Channel_5
@@ -74,11 +74,12 @@ xQueueHandle adcQueue;
 // logging info for prox sensor
 volatile uint16_t ADCBuffer[NBR_OF_ADC_CHANNELS];
 
-volatile uint16_t prox1_value;
-
 LOG_GROUP_START(adc)
-//LOG_ADD(LOG_UINT16, prox1, &prox1_value)
-LOG_ADD(LOG_UINT16, prox1, &ADC1->DR)
+LOG_ADD(LOG_UINT16, A0, &ADCBuffer[0])
+LOG_ADD(LOG_UINT16, A1, &ADCBuffer[1])
+LOG_ADD(LOG_UINT16, A2, &ADCBuffer[2])
+LOG_ADD(LOG_UINT16, A3, &ADCBuffer[3])
+LOG_ADD(LOG_UINT16, A4, &ADCBuffer[4])
 LOG_GROUP_STOP(adc)
 
 
@@ -97,22 +98,26 @@ void adcInit(void)
 	GPIO_InitTypeDef		GPIO_InitStructure;
 	TIM_TimeBaseInitTypeDef	TIM_TimeBaseStructure;
 
-	// Enable timer (timer runs at 21 MHz)
-//	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-//	TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-//	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-//	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-//	TIM_TimeBaseStructure.TIM_Period = 1999;
-//	TIM_TimeBaseStructure.TIM_Prescaler = 17999;
-//	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
-//	TIM_SelectOutputTrigger(TIM2,TIM_TRGOSource_Update);
-//	TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
+	if (isInit)
+		return;
 
-//	NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
-//	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-//	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0F;
-//	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0F;
-//	NVIC_Init(&NVIC_InitStructure);
+	// Enable timer (timer runs at 21 MHz)
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+	TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
+	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+	TIM_TimeBaseStructure.TIM_Period = 1000;
+	TIM_TimeBaseStructure.TIM_Prescaler = 840;
+	TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
+	TIM_SelectOutputTrigger(TIM3, TIM_TRGOSource_Update);
+	TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
+
+	// configure timer interrupt
+	NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0F;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0F;
+	NVIC_Init(&NVIC_InitStructure);
 
 	// Enable clock on DMA1 & GPIOA 
 	// Enable DMA2, thats where ADC is hooked on -> see Table 43 (RM00090) 
@@ -125,7 +130,7 @@ void adcInit(void)
 	GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AIN;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
-	GPIO_Init(GPIOC, &GPIO_InitStructure);
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
 	// Initialise DMA, ADC1 is connected to DMA2 Channel 0 Stream 0
 	DMA_StructInit(&DMA_InitStructure);
@@ -167,12 +172,9 @@ void adcInit(void)
 	// ADC1 Init: this is mostly done with ADC1->CR 
 	ADC_InitStructure.ADC_Resolution = ADC_Resolution_12b;
 	ADC_InitStructure.ADC_ScanConvMode = ENABLE;
-//	ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;
-	ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
-//	ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_Rising;
-	ADC_InitStructure.ADC_ExternalTrigConvEdge = 0;
-//	ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T2_TRGO;
-	ADC_InitStructure.ADC_ExternalTrigConv = 0;
+	ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;
+	ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_Rising;
+	ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T3_TRGO;
 	ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
 	ADC_InitStructure.ADC_NbrOfConversion = NBR_OF_ADC_CHANNELS;
 	ADC_Init(ADC1, &ADC_InitStructure);
@@ -182,10 +184,10 @@ void adcInit(void)
 
 	// Configure channels 
 	ADC_RegularChannelConfig(ADC1, CH_A0, 1, ADC_SampleTime_480Cycles);			
-//	ADC_RegularChannelConfig(ADC1, CH_A1, 2, ADC_SampleTime_480Cycles); 
-//	ADC_RegularChannelConfig(ADC1, CH_A2, 3, ADC_SampleTime_480Cycles);
-//	ADC_RegularChannelConfig(ADC1, CH_A3, 4, ADC_SampleTime_480Cycles);
-//	ADC_RegularChannelConfig(ADC1, CH_A4, 5, ADC_SampleTime_480Cycles);
+	ADC_RegularChannelConfig(ADC1, CH_A1, 2, ADC_SampleTime_480Cycles); 
+	ADC_RegularChannelConfig(ADC1, CH_A2, 3, ADC_SampleTime_480Cycles);
+	ADC_RegularChannelConfig(ADC1, CH_A3, 4, ADC_SampleTime_480Cycles);
+	ADC_RegularChannelConfig(ADC1, CH_A4, 5, ADC_SampleTime_480Cycles);
 
 	// Enable DMA request after last transfer (Single-ADC mode) 
 	ADC_DMARequestAfterLastTransferCmd(ADC1, ENABLE);
@@ -194,8 +196,18 @@ void adcInit(void)
 	// Enable ADC1
 	ADC_Cmd(ADC1, ENABLE);
 
-	// Start Timer 2 (and begin conversions)
-//	TIM_Cmd(TIM2, ENABLE);
+	// Start Timer 3 (and begin conversions)
+	TIM_Cmd(TIM3, ENABLE);
+
+	isInit = true;
+}
+
+uint16_t getADCValue(int channel)
+{
+	if (channel >= NBR_OF_ADC_CHANNELS)
+		return 0;
+	
+	return ADCBuffer[channel];
 }
 
 /*
@@ -213,8 +225,8 @@ void __old_adcInit(void)
 	NVIC_InitTypeDef NVIC_InitStructure;
 	GPIO_InitTypeDef GPIO_InitStructure;
 
-	// Enable TIM2, GPIOA and ADC1 clock
-//	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+	// Enable TIM3, GPIOA and ADC1 clock
+//	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
 //	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1 | RCC_APB2Periph_ADC2, ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
@@ -230,17 +242,17 @@ void __old_adcInit(void)
 //	TIM_TimeBaseStructure.TIM_Prescaler = ADC_TRIG_PRESCALE;
 //	TIM_TimeBaseStructure.TIM_ClockDivision = 0;
 //	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-//	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
+//	TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
 //
-//	// TIM2 channel2 configuration in PWM mode
+//	// TIM3 channel2 configuration in PWM mode
 //	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
 //	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
 //	TIM_OCInitStructure.TIM_Pulse = 1;
 //	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
-//	TIM_OC2Init(TIM2, &TIM_OCInitStructure);
-//	TIM_OC2PreloadConfig(TIM2, TIM_OCPreload_Enable);
+//	TIM_OC2Init(TIM3, &TIM_OCInitStructure);
+//	TIM_OC2PreloadConfig(TIM3, TIM_OCPreload_Enable);
 //	// Halt timer 2 during debug halt.
-//	DBGMCU_Config(DBGMCU_TIM2_STOP, ENABLE);
+//	DBGMCU_Config(DBGMCU_TIM3_STOP, ENABLE);
 
 //	adcDmaInit();
 
@@ -332,13 +344,13 @@ bool adcTest(void)
 //	DMA_ITConfig(DMA1_Stream1, DMA_IT_TC | DMA_IT_HT, ENABLE);
 //	// Enable ADC1 DMA
 //	ADC_DMACmd(ADC1, ENABLE);
-//	// TIM2 counter enable
-////	TIM_Cmd(TIM2, ENABLE);
+//	// TIM3 counter enable
+////	TIM_Cmd(TIM3, ENABLE);
 //}
 
 //void adcDmaStop(void)
 //{
-////	TIM_Cmd(TIM2, DISABLE);
+////	TIM_Cmd(TIM3, DISABLE);
 //}
 
 // ADC Interrupt handler, called from the DMA1_Channel1_IRQHandler in nvic.c

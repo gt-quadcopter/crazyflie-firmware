@@ -32,6 +32,8 @@
 #include "usb_core.h"
 #include "adc.h"
 
+#include "debug.h"
+
 #define DONT_DISCARD __attribute__((used))
 
 void nvicInit(void)
@@ -184,6 +186,11 @@ void DONT_DISCARD TIM2_IRQHandler(void)
 //  ADC_StartConversion(ADC2);
 //  TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
 
+}
+
+void DONT_DISCARD TIM3_IRQHandler(void)
+{
+	TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
 }
 
 void DONT_DISCARD DMA1_Stream5_IRQHandler(void)

@@ -95,17 +95,17 @@ bool adcTest(void);
  *
  * @return The voltage in a float value
  */
-float adcConvertToVoltageFloat(uint16_t v, uint16_t vref);
+//float adcConvertToVoltageFloat(uint16_t v, uint16_t vref);
 
 /**
  * Starts converting ADC samples by activating the DMA.
  */
-void adcDmaStart(void);
+//void adcDmaStart(void);
 
 /**
  * Stop converting ADC samples.
  */
-void adcDmaStop(void);
+//void adcDmaStop(void);
 
 /**
  * ADC interrupt handler
@@ -116,10 +116,5 @@ void adcInterruptHandler(void);
  * ADC task
  */
 void adcTask(void *param);
-
-/**
- * Update Proximity Sensor
- */
-void proxSensorUpdate(AdcGroup* adcValues);
 
 #endif /* ADC_H_ */

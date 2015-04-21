@@ -38,11 +38,6 @@
 #include "debug.h"
 #include <string.h>
 
-#ifdef ADC_OUTPUT_RAW_DATA
-#include "uart.h"
-#include "acc.h"
-#endif
-
 // PORT A GPIOs for crazyflie 2.0
 #define GPIO_A0_PIN GPIO_Pin_2
 #define GPIO_A1_PIN GPIO_Pin_3
@@ -78,10 +73,10 @@ LOG_ADD(LOG_UINT16, A3, &ADCBuffer[3])
 LOG_ADD(LOG_UINT16, A4, &ADCBuffer[4])
 
 LOG_ADD(LOG_FLOAT, A0_f, &ADCFloats[0])
-LOG_ADD(LOG_FLOAT, A0_f, &ADCFloats[1])
-LOG_ADD(LOG_FLOAT, A0_f, &ADCFloats[2])
-LOG_ADD(LOG_FLOAT, A0_f, &ADCFloats[3])
-LOG_ADD(LOG_FLOAT, A0_f, &ADCFloats[4])
+LOG_ADD(LOG_FLOAT, A1_f, &ADCFloats[1])
+LOG_ADD(LOG_FLOAT, A2_f, &ADCFloats[2])
+LOG_ADD(LOG_FLOAT, A3_f, &ADCFloats[3])
+LOG_ADD(LOG_FLOAT, A4_f, &ADCFloats[4])
 LOG_GROUP_STOP(adc)
 
 
@@ -121,7 +116,7 @@ void adcInit(void)
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0F;
 	NVIC_Init(&NVIC_InitStructure);
 
-	// Enable clock on DMA1 & GPIOA 
+	// Enable clock on DMA2 & GPIOA 
 	// Enable DMA2, thats where ADC is hooked on -> see Table 43 (RM00090) 
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_DMA2, ENABLE);
 
@@ -137,7 +132,7 @@ void adcInit(void)
 	// Initialise DMA, ADC1 is connected to DMA2 Channel 0 Stream 0
 	DMA_StructInit(&DMA_InitStructure);
 	DMA_InitStructure.DMA_Channel = DMA_Channel_0;
-	DMA_InitStructure.DMA_BufferSize = ADC_N_CHANNELS;
+	DMA_InitStructure.DMA_BufferSize = ADC_BUFFER_LEN;
 	DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
 	DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable; // no FIFO 
 	DMA_InitStructure.DMA_FIFOThreshold = 0;
@@ -154,10 +149,17 @@ void adcInit(void)
 	DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
 	DMA_Init(DMA2_Stream0, &DMA_InitStructure);
 
-	// enable DMA interrupts
+	// comfig DMA interrupts and start DMA
 	DMA_ITConfig(DMA2_Stream0, DMA_IT_HTIF0, ENABLE);
 	DMA_ITConfig(DMA2_Stream0, DMA_IT_TCIF0, ENABLE);
 	DMA_Cmd(DMA2_Stream0, ENABLE);
+
+	// configure DMA interrupt
+	NVIC_InitStructure.NVIC_IRQChannel = DMA2_Stream0_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_ADC_PRI;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
 
 	// reset ADC configs and structures
 	ADC_StructInit(&ADC_InitStructure);
@@ -202,20 +204,13 @@ void adcInit(void)
 	// Enable ADC1
 	ADC_Cmd(ADC1, ENABLE);
 
-	// configure DMA interrupt
-	NVIC_InitStructure.NVIC_IRQChannel = DMA2_Stream0_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_ADC_PRI;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
-
 	// Start Timer 3 (and begin conversions)
 	TIM_Cmd(TIM3, ENABLE);
 
-	adcQueue = xQueueCreate(1, sizeof(uint16_t*));
+//	adcQueue = xQueueCreate(1, sizeof(uint16_t*));
 
-	xTaskCreate(adcTask, (const signed char * const)"ADC",
-							configMINIMAL_STACK_SIZE, NULL, 3, NULL);
+//	xTaskCreate(adcTask, (const signed char * const)"ADC",
+//							configMINIMAL_STACK_SIZE, NULL, 3, NULL);
 	isInit = true;
 }
 
@@ -227,87 +222,78 @@ uint16_t getADCValue(int channel)
 	return ADCBuffer[channel];
 }
 
-/*
-void __old_adcInit(void)
+float getADCValue_f(int channel)
 {
-	DEBUG_PRINT("adcInit() start\n");
-
-	// Enable ADC2 external trigger
-	ADC_ExternalTrigConvCmd(ADC2, ENABLE);
-
-	// Enable the DMA1 channel1 Interrupt
-	NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream1_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_ADC_PRI;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
-
-	adcQueue = xQueueCreate(1, sizeof(AdcGroup*));
-
-	xTaskCreate(adcTask, (const signed char * const)"ADC",
-							configMINIMAL_STACK_SIZE, NULL, 3, NULL);
-
-	isInit = true;
-	DEBUG_PRINT("adcInit() complete\n");
+	if (channel >= ADC_N_CHANNELS)
+		return 0;
+	return ADCFloats[channel];
 }
-*/
+
+// ADC Interrupt handler, called from the DMA1_Channel1_IRQHandler in nvic.c
+void adcInterruptHandler(void)
+{
+	int i, j;
+	uint16_t *adcValues;
+	uint32_t totals[ADC_N_CHANNELS];
+	for (i = 0; i < ADC_N_CHANNELS; i++)
+		totals[i] = 0;
+
+	// clear DMA IT flag and get address for which half of the buffer to use
+	if(DMA_GetITStatus(DMA2_Stream0, DMA_IT_HTIF0))
+	{
+		DMA_ClearITPendingBit(DMA2_Stream0, DMA_IT_HTIF0);
+		adcValues = (uint16_t*)&ADCBuffer[0];
+	}
+	if(DMA_GetITStatus(DMA2_Stream0, DMA_IT_TCIF0))
+	{
+		DMA_ClearITPendingBit(DMA2_Stream0, DMA_IT_TCIF0);
+		adcValues = (uint16_t*)&ADCBuffer[ADC_BUFFER_LEN / 2];
+	}
+
+	// calculate totals
+	for (j = 0; j < ADC_N_OVERSAMP; j++)
+		for (i = 0; i < ADC_N_CHANNELS; i++)
+			totals[i] += adcValues[ADC_N_CHANNELS*j + i];
+
+	// calculate averages
+	for (i = 0; i < ADC_N_CHANNELS; i++)
+		ADCFloats[i] = (1.0f*totals[i]) / (4095.0f*ADC_N_OVERSAMP);
+}
+
+//void adcTask(void *param)
+//{
+//	uint16_t *values;
+//	uint32_t totals[ADC_N_CHANNELS];
+//	int i, j;
+//	memset(totals, 0, ADC_N_CHANNELS*sizeof(uint32_t));
+//
+//	vTaskSetApplicationTaskTag(0, (void*)TASK_ADC_ID_NBR);
+//	vTaskDelay(1000);
+//
+//	while(1)
+//	{
+//		DEBUG_PRINT("ADC Task Loop\n");
+//		xQueueReceive(adcQueue, &values, portMAX_DELAY);
+//
+//		for (i = 0; i < ADC_N_OVERSAMP; i++)
+//		{
+//			for (j = 0; j < ADC_N_CHANNELS; j++)
+//			{
+//				totals[j] += *values;
+//				values++;
+//			}
+//		}
+//
+//		// scale down the totals for each channel
+//		for (i = 0; i < ADC_N_CHANNELS; i++)
+//		{
+//			ADCFloats[i] = (1.0f*totals[i]) / (4095.0f*ADC_N_OVERSAMP);
+//		}
+//	}
+//}
 
 bool adcTest(void)
 {
 	return isInit;
 }
 
-// ADC Interrupt handler, called from the DMA1_Channel1_IRQHandler in nvic.c
-void adcInterruptHandler(void)
-{
-	portBASE_TYPE xHigherPriorityTaskWoken;
-
-	if(DMA_GetITStatus(DMA2_Stream0, DMA_IT_HTIF1))
-	{
-		DMA_ClearITPendingBit(DMA2_Stream0, DMA_IT_HTIF1);
-
-		// send data pointer to ADC task
-		xQueueSendFromISR(adcQueue, (void*)ADCBuffer, &xHigherPriorityTaskWoken);
-	}
-	if(DMA_GetITStatus(DMA2_Stream0, DMA_IT_TCIF1))
-	{
-		DMA_ClearITPendingBit(DMA2_Stream0, DMA_IT_TCIF1);
-
-		// send data pointer to ADC task
-		xQueueSendFromISR(adcQueue,
-					(void*)&ADCBuffer[ADC_BUFFER_LEN/2],
-					&xHigherPriorityTaskWoken);
-	}
-	DEBUG_PRINT("adcInterruptHandler Finished\n");
-}
-
-void adcTask(void *param)
-{
-	uint16_t *values;
-	uint32_t totals[ADC_N_CHANNELS];
-	int i, j;
-	memset(totals, 0, ADC_N_CHANNELS*sizeof(uint32_t));
-
-	vTaskSetApplicationTaskTag(0, (void*)TASK_ADC_ID_NBR);
-	vTaskDelay(1000);
-
-	while(1)
-	{
-		xQueueReceive(adcQueue, &values, portMAX_DELAY);
-
-		for (i = 0; i < ADC_N_OVERSAMP; i++)
-		{
-			for (j = 0; j < ADC_N_CHANNELS; j++)
-			{
-				totals[j] += *values;
-				values++;
-			}
-		}
-
-		// scale down the totals for each channel
-		for (i = 0; i < ADC_N_CHANNELS; i++)
-		{
-			ADCFloats[i] = (1.0f*totals[i]) / (4095.0f*ADC_N_OVERSAMP);
-		}
-	}
-}

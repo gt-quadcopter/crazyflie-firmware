@@ -40,11 +40,6 @@
 void adcInterruptHandler(void);
 
 /**
- * ADC task
- */
-void adcTask(void *param);
-
-/**
  * Initialize analog to digital converter. Configures gyro and vref channels.
  * Configures DMA to transfer the result.
  */
@@ -64,10 +59,11 @@ bool adcTest(void);
 uint16_t getADCValue(int channel);
 
 #define ADC_N_CHANNELS		5
-#define ADC_N_OVERSAMP		4	// number of sample points to average
+#define ADC_N_OVERSAMP		8	// number of sample points to average
 
 // 2x buffer length for double buffering
 #define ADC_BUFFER_LEN		(2*ADC_N_CHANNELS*ADC_N_OVERSAMP)
+//#define ADC_BUFFER_LEN		ADC_N_CHANNELS
 #define ADC_SAMPLING_FREQ	100	// in Hz
 #define ADC_OVERSAMP_FREQ	(ADC_SAMPLING_FREQ * ADC_N_OVERSAMP)
 
@@ -145,6 +141,11 @@ void adcDmaStart(void);
  * Stop converting ADC samples.
  */
 void adcDmaStop(void);
+
+/**
+ * ADC task
+ */
+void adcTask(void *param);
 
 #endif /* STM32F4XX */
 #endif /* ADC_H_ */

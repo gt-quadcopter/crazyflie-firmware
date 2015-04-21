@@ -177,7 +177,9 @@ void DONT_DISCARD DebugMon_Handler(void)
 
 void DONT_DISCARD DMA1_Channel1_IRQHandler(void)
 {
+#ifdef STM32F1XX
   adcInterruptHandler();
+#endif
 }
 
 void DONT_DISCARD TIM2_IRQHandler(void)
@@ -201,6 +203,13 @@ void DONT_DISCARD DMA1_Stream5_IRQHandler(void)
 void DONT_DISCARD DMA2_Stream7_IRQHandler(void)
 {
   uartDmaIsr();
+}
+
+void DONT_DISCARD DMA2_Stream0_IRQHandler(void)
+{
+//#ifdef STM32F4XX
+	adcInterruptHandler();
+//#endif
 }
 
 

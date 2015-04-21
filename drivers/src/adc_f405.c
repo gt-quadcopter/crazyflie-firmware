@@ -36,6 +36,7 @@
 #include "imu.h"
 #include "log.h"
 #include "debug.h"
+#include <string.h>
 
 #ifdef ADC_OUTPUT_RAW_DATA
 #include "uart.h"
@@ -51,7 +52,6 @@
 
 
 // CHANNELS
-#define NBR_OF_ADC_CHANNELS		5
 #define CH_A0	ADC_Channel_2
 #define CH_A1	ADC_Channel_3
 #define CH_A2	ADC_Channel_5
@@ -66,7 +66,9 @@ static bool isInit = false;
 xQueueHandle adcQueue;
 
 // logging info for prox sensor
-volatile uint16_t ADCBuffer[NBR_OF_ADC_CHANNELS];
+volatile uint16_t ADCBuffer[ADC_BUFFER_LEN];
+
+float ADCFloats[ADC_N_CHANNELS];
 
 LOG_GROUP_START(adc)
 LOG_ADD(LOG_UINT16, A0, &ADCBuffer[0])
@@ -74,6 +76,12 @@ LOG_ADD(LOG_UINT16, A1, &ADCBuffer[1])
 LOG_ADD(LOG_UINT16, A2, &ADCBuffer[2])
 LOG_ADD(LOG_UINT16, A3, &ADCBuffer[3])
 LOG_ADD(LOG_UINT16, A4, &ADCBuffer[4])
+
+LOG_ADD(LOG_FLOAT, A0_f, &ADCFloats[0])
+LOG_ADD(LOG_FLOAT, A0_f, &ADCFloats[1])
+LOG_ADD(LOG_FLOAT, A0_f, &ADCFloats[2])
+LOG_ADD(LOG_FLOAT, A0_f, &ADCFloats[3])
+LOG_ADD(LOG_FLOAT, A0_f, &ADCFloats[4])
 LOG_GROUP_STOP(adc)
 
 
@@ -129,7 +137,7 @@ void adcInit(void)
 	// Initialise DMA, ADC1 is connected to DMA2 Channel 0 Stream 0
 	DMA_StructInit(&DMA_InitStructure);
 	DMA_InitStructure.DMA_Channel = DMA_Channel_0;
-	DMA_InitStructure.DMA_BufferSize = NBR_OF_ADC_CHANNELS;
+	DMA_InitStructure.DMA_BufferSize = ADC_N_CHANNELS;
 	DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory;
 	DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable; // no FIFO 
 	DMA_InitStructure.DMA_FIFOThreshold = 0;
@@ -145,6 +153,10 @@ void adcInit(void)
 	DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
 	DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
 	DMA_Init(DMA2_Stream0, &DMA_InitStructure);
+
+	// enable DMA interrupts
+	DMA_ITConfig(DMA2_Stream0, DMA_IT_HTIF0, ENABLE);
+	DMA_ITConfig(DMA2_Stream0, DMA_IT_TCIF0, ENABLE);
 	DMA_Cmd(DMA2_Stream0, ENABLE);
 
 	// reset ADC configs and structures
@@ -170,7 +182,7 @@ void adcInit(void)
 	ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_Rising;
 	ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T3_TRGO;
 	ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
-	ADC_InitStructure.ADC_NbrOfConversion = NBR_OF_ADC_CHANNELS;
+	ADC_InitStructure.ADC_NbrOfConversion = ADC_N_CHANNELS;
 	ADC_Init(ADC1, &ADC_InitStructure);
 
 	// Enable Vref & Temperature channel 
@@ -190,15 +202,26 @@ void adcInit(void)
 	// Enable ADC1
 	ADC_Cmd(ADC1, ENABLE);
 
+	// configure DMA interrupt
+	NVIC_InitStructure.NVIC_IRQChannel = DMA2_Stream0_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_ADC_PRI;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
+
 	// Start Timer 3 (and begin conversions)
 	TIM_Cmd(TIM3, ENABLE);
 
+	adcQueue = xQueueCreate(1, sizeof(uint16_t*));
+
+	xTaskCreate(adcTask, (const signed char * const)"ADC",
+							configMINIMAL_STACK_SIZE, NULL, 3, NULL);
 	isInit = true;
 }
 
 uint16_t getADCValue(int channel)
 {
-	if (channel >= NBR_OF_ADC_CHANNELS)
+	if (channel >= ADC_N_CHANNELS)
 		return 0;
 	
 	return ADCBuffer[channel];
@@ -237,38 +260,54 @@ bool adcTest(void)
 // ADC Interrupt handler, called from the DMA1_Channel1_IRQHandler in nvic.c
 void adcInterruptHandler(void)
 {
-	/*portBASE_TYPE xHigherPriorityTaskWoken;
-	AdcGroup* adcBuffer;
+	portBASE_TYPE xHigherPriorityTaskWoken;
 
-	if(DMA_GetITStatus(DMA1_Stream1, DMA_IT_HTIF1))
+	if(DMA_GetITStatus(DMA2_Stream0, DMA_IT_HTIF1))
 	{
-		DMA_ClearITPendingBit(DMA1_Stream1, DMA_IT_HTIF1);
-		adcBuffer = (AdcGroup*)&adcValues[0];
-//		xQueueSendFromISR(adcQueue, &adcBuffer, &xHigherPriorityTaskWoken);
+		DMA_ClearITPendingBit(DMA2_Stream0, DMA_IT_HTIF1);
+
+		// send data pointer to ADC task
+		xQueueSendFromISR(adcQueue, (void*)ADCBuffer, &xHigherPriorityTaskWoken);
 	}
-	if(DMA_GetITStatus(DMA1_Stream1, DMA_IT_TCIF1))
+	if(DMA_GetITStatus(DMA2_Stream0, DMA_IT_TCIF1))
 	{
-		DMA_ClearITPendingBit(DMA1_Stream1, DMA_IT_TCIF1);
-		adcBuffer = (AdcGroup*)&adcValues[ADC_MEAN_SIZE];
-//		xQueueSendFromISR(adcQueue, &adcBuffer, &xHigherPriorityTaskWoken);
-	}*/
+		DMA_ClearITPendingBit(DMA2_Stream0, DMA_IT_TCIF1);
+
+		// send data pointer to ADC task
+		xQueueSendFromISR(adcQueue,
+					(void*)&ADCBuffer[ADC_BUFFER_LEN/2],
+					&xHigherPriorityTaskWoken);
+	}
 	DEBUG_PRINT("adcInterruptHandler Finished\n");
 }
 
 void adcTask(void *param)
 {
-//	AdcGroup* adcRawValues;
-//	AdcGroup adcValues;
-//
-//	vTaskSetApplicationTaskTag(0, (void*)TASK_ADC_ID_NBR);
-//	vTaskDelay(1000);
-//
-//	adcDmaStart();
-//
-//	while(1)
-//	{
-//		xQueueReceive(adcQueue, &adcRawValues, portMAX_DELAY);
-//		adcDecimate(adcRawValues, &adcValues);	// 10% CPU
-//		proxSensorUpdate(&adcValues);
-//	}
+	uint16_t *values;
+	uint32_t totals[ADC_N_CHANNELS];
+	int i, j;
+	memset(totals, 0, ADC_N_CHANNELS*sizeof(uint32_t));
+
+	vTaskSetApplicationTaskTag(0, (void*)TASK_ADC_ID_NBR);
+	vTaskDelay(1000);
+
+	while(1)
+	{
+		xQueueReceive(adcQueue, &values, portMAX_DELAY);
+
+		for (i = 0; i < ADC_N_OVERSAMP; i++)
+		{
+			for (j = 0; j < ADC_N_CHANNELS; j++)
+			{
+				totals[j] += *values;
+				values++;
+			}
+		}
+
+		// scale down the totals for each channel
+		for (i = 0; i < ADC_N_CHANNELS; i++)
+		{
+			ADCFloats[i] = (1.0f*totals[i]) / (4095.0f*ADC_N_OVERSAMP);
+		}
+	}
 }

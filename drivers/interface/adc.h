@@ -63,7 +63,11 @@ bool adcTest(void);
  */
 uint16_t getADCValue(int channel);
 
-#define ADC_N_OVERSAMP		1	// number of sample points to average
+#define ADC_N_CHANNELS		5
+#define ADC_N_OVERSAMP		4	// number of sample points to average
+
+// 2x buffer length for double buffering
+#define ADC_BUFFER_LEN		(2*ADC_N_CHANNELS*ADC_N_OVERSAMP)
 #define ADC_SAMPLING_FREQ	100	// in Hz
 #define ADC_OVERSAMP_FREQ	(ADC_SAMPLING_FREQ * ADC_N_OVERSAMP)
 

@@ -58,6 +58,11 @@ bool adcTest(void);
  */
 uint16_t getADCValue(int channel);
 
+/**
+ * Get floating point scaled value from last set of conversions
+ */
+float getADCValue_f(int channel);
+
 #define ADC_N_CHANNELS		5
 #define ADC_N_OVERSAMP		8	// number of sample points to average
 

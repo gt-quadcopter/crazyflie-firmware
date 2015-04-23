@@ -36,7 +36,6 @@
 #include "imu.h"
 #include "log.h"
 #include "debug.h"
-#include <string.h>
 
 // PORT A GPIOs for crazyflie 2.0
 #define GPIO_A0_PIN GPIO_Pin_2
@@ -46,7 +45,7 @@
 #define GPIO_A4_PIN GPIO_Pin_7
 
 
-// CHANNELS
+// ADC CHANNELS
 #define CH_A0	ADC_Channel_2
 #define CH_A1	ADC_Channel_3
 #define CH_A2	ADC_Channel_5
@@ -203,6 +202,17 @@ void adcInit(void)
 
 	// Enable ADC1
 	ADC_Cmd(ADC1, ENABLE);
+	
+#ifdef ADC_GPIOC12_TIMING_DEBUG
+	// enable GPIO C12 for timing the averaging
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+	GPIO_InitStructure.GPIO_Pin =	GPIO_Pin_12;
+	GPIO_InitStructure.GPIO_Mode =	GPIO_Mode_OUT;
+	GPIO_InitStructure.GPIO_Speed =	GPIO_High_Speed;
+	GPIO_InitStructure.GPIO_OType =	GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd =	GPIO_PuPd_NOPULL;
+	GPIO_Init(GPIOC, &GPIO_InitStructure);
+#endif
 
 	// Start Timer 3 (and begin conversions)
 	TIM_Cmd(TIM3, ENABLE);
@@ -229,12 +239,27 @@ float getADCValue_f(int channel)
 	return ADCFloats[channel];
 }
 
-// ADC Interrupt handler, called from the DMA1_Channel1_IRQHandler in nvic.c
+/**
+ * ADC Interrupt handler, called from the DMA2_Stream0_IRQHandler in nvic.c
+ * Because I couldn't get the OS task/queue stuff to work, the oversampling decimation
+ * just happens in this IRQ.
+ *
+ * According to timings measured by toggling GPIOC Pin 12 at the beginning and
+ * end of the IRQ, this function takes approximately 11.4us to average 10 samples
+ * for each of the 5 channels.
+ */
 void adcInterruptHandler(void)
 {
 	int i, j;
 	uint16_t *adcValues;
 	uint32_t totals[ADC_N_CHANNELS];
+
+#ifdef ADC_GPIOC12_TIMING_DEBUG
+	// set C12 for timing analysis
+	GPIO_SetBits(GPIOC, GPIO_Pin_12);
+#endif
+
+	// initialize totals to 0
 	for (i = 0; i < ADC_N_CHANNELS; i++)
 		totals[i] = 0;
 
@@ -258,6 +283,10 @@ void adcInterruptHandler(void)
 	// calculate averages
 	for (i = 0; i < ADC_N_CHANNELS; i++)
 		ADCFloats[i] = (1.0f*totals[i]) / (4095.0f*ADC_N_OVERSAMP);
+
+#ifdef ADC_GPIOC12_TIMING_DEBUG
+	GPIO_ResetBits(GPIOC, GPIO_Pin_12);
+#endif
 }
 
 //void adcTask(void *param)

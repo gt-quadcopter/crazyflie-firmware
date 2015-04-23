@@ -64,17 +64,20 @@ uint16_t getADCValue(int channel);
 float getADCValue_f(int channel);
 
 #define ADC_N_CHANNELS		5
-#define ADC_N_OVERSAMP		8	// number of sample points to average
+#define ADC_N_OVERSAMP		10	// number of sample points to average
 
 // 2x buffer length for double buffering
 #define ADC_BUFFER_LEN		(2*ADC_N_CHANNELS*ADC_N_OVERSAMP)
-//#define ADC_BUFFER_LEN		ADC_N_CHANNELS
-#define ADC_SAMPLING_FREQ	100	// in Hz
+#define ADC_SAMPLING_FREQ	50	// in Hz
 #define ADC_OVERSAMP_FREQ	(ADC_SAMPLING_FREQ * ADC_N_OVERSAMP)
 
 // 84MHz / 840 = 100KHz, so the tick period is 0.01ms
 #define ADC_TIM_PRESCALE	(840-1)
-#define ADC_TIM_PERIOD		(((84000000 / (ADC_TIM_PRESCALE+1)) / ADC_OVERSAMP_FREQ)-1)
+
+// convert that to time period
+#define ADC_TIM_PERIOD		(((84000000 / (ADC_TIM_PRESCALE+1)) / (2*ADC_OVERSAMP_FREQ))-1)
+
+//#define ADC_GPIOC12_TIMING_DEBUG
 
 #else
 /***************** Crazyflie 1 Functions/Options ********************/
